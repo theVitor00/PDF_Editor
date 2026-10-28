@@ -297,3 +297,4 @@ def _convert_pdf_to_images(
         target_format=fmt,
         message=f"{len(out_paths)} imagem(ns) {fmt.upper()} gerada(s) a partir do PDF.",
     )
+

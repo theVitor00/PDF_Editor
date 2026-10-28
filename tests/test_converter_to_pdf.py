@@ -78,3 +78,4 @@ def test_convert_txt_md_html_csv_xlsx_to_pdf(
         with pymupdf.open(str(res.output_path)) as pdf_doc:
             extracted = pdf_doc[0].get_text("text")
             assert expected_text in extracted
+

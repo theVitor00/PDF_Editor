@@ -1,11 +1,10 @@
 """
 Aba de Edição de Texto em Documentos PDF.
 Segue o fluxo: Entrada -> Processamento -> Saída.
-Inspeciona os blocos/spans editáveis do PDF e permite substituir textos ou inserir
-novos textos gerando um novo arquivo PDF sem modificar o original.
+Inspeciona os blocos/spans editáveis do PDF (incluindo detecção de sombreamento de fundo,
+cor do texto, negrito e itálico) e permite substituir textos preservando 100% da formatação.
 """
 
-from pathlib import Path
 from typing import Optional
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import (
@@ -34,10 +33,11 @@ from cortex_pdf.ui.components import (
     PipelineBanner,
     ResultStatusCard,
 )
+from cortex_pdf.ui.icons import fa_icon
 
 
 class EditorTab(QWidget):
-    """Aba para editar textos contidos em documentos PDF."""
+    """Aba para editar textos contidos em documentos PDF preservando formatação e sombreamento."""
 
     open_in_viewer = pyqtSignal(str)
 
@@ -60,7 +60,7 @@ class EditorTab(QWidget):
         lbl_title = QLabel("Editar Texto do PDF")
         lbl_title.setProperty("class", "PageHeaderTitle")
         lbl_desc = QLabel(
-            "Localize e edite trechos de texto em documentos PDF que possuem camada de texto editável."
+            "Localize e edite trechos de texto preservando sombreamento de fundo, cor original (inclusive fontes brancas), tamanho e estilo."
         )
         lbl_desc.setProperty("class", "PageHeaderDesc")
 
@@ -89,13 +89,13 @@ class EditorTab(QWidget):
         self.editability_lbl = QLabel("Selecione um arquivo PDF acima para inspecionar os textos editáveis.")
         self.editability_lbl.setProperty("class", "StepSubtitle")
 
-        # Lista de trechos detectados para clique rápido
-        spans_lbl = QLabel("Trechos de texto detectados no documento (clique em um item para preencher):")
+        spans_lbl = QLabel(
+            "Trechos detectados com metadados de estilo e sombreamento (clique em um item para preencher):"
+        )
         self.spans_list = QListWidget()
-        self.spans_list.setMaximumHeight(130)
+        self.spans_list.setMaximumHeight(140)
         self.spans_list.itemClicked.connect(self._on_span_item_clicked)
 
-        # Campos de busca e substituição
         fields_row = QHBoxLayout()
         col_old = QVBoxLayout()
         col_old.addWidget(QLabel("Texto atual a ser substituído:"))
@@ -112,7 +112,6 @@ class EditorTab(QWidget):
         fields_row.addLayout(col_old, stretch=1)
         fields_row.addLayout(col_new, stretch=1)
 
-        # Filtro opcional por página
         scope_row = QHBoxLayout()
         self.all_pages_chk = QCheckBox("Aplicar em todas as páginas do documento")
         self.all_pages_chk.setChecked(True)
@@ -142,7 +141,8 @@ class EditorTab(QWidget):
         layout.addWidget(self.output_card)
 
         # Botão de Ação e Status
-        self.run_btn = QPushButton("✏️ Aplicar Edição e Gerar Novo PDF")
+        self.run_btn = QPushButton("Aplicar Edição e Gerar Novo PDF")
+        self.run_btn.setIcon(fa_icon("edit", color="#ffffff"))
         self.run_btn.setProperty("class", "PrimaryButton")
         self.run_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self.run_btn.clicked.connect(self.run_edit)
@@ -165,21 +165,31 @@ class EditorTab(QWidget):
         try:
             info = inspect_pdf_editability(path_str)
             if not info["editable"]:
-                self.editability_lbl.setText(f"⚠️ {info['reason']}")
-                self.editability_lbl.setStyleSheet("color: #fbbf24; font-weight: 600;")
+                self.editability_lbl.setText(info["reason"])
+                self.editability_lbl.setStyleSheet("color: #b45309; font-weight: 600;")
                 self.run_btn.setEnabled(False)
                 return
 
             self.run_btn.setEnabled(True)
             self.page_spin.setMaximum(max(1, info["page_count"]))
             self.editability_lbl.setText(
-                f"✅ {info['reason']} ({info['total_text_spans']} trechos encontrados em {info['page_count']} página(s))."
+                f"{info['reason']} ({info['total_text_spans']} trechos encontrados em {info['page_count']} página(s))."
             )
-            self.editability_lbl.setStyleSheet("color: #34d399; font-weight: 600;")
+            self.editability_lbl.setStyleSheet("color: #15803d; font-weight: 600;")
 
             spans = extract_editable_spans(path_str)
             for sp in spans[:150]:
-                item = QListWidgetItem(f"[Pág. {sp.page_index + 1}] {sp.text}")
+                tags = [f"{sp.font_size:.0f}pt"]
+                if sp.is_bold:
+                    tags.append("Negrito")
+                if sp.is_italic:
+                    tags.append("Itálico")
+                if sp.has_shading:
+                    tags.append("Fundo Sombreado")
+                if sp.color_rgb == (1.0, 1.0, 1.0):
+                    tags.append("Fonte Branca")
+                meta_str = ", ".join(tags)
+                item = QListWidgetItem(f"[Pág. {sp.page_index + 1} | {meta_str}] {sp.text}")
                 item.setData(Qt.ItemDataRole.UserRole, sp.text)
                 self.spans_list.addItem(item)
         except Exception as exc:

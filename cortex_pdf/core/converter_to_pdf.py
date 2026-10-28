@@ -303,3 +303,4 @@ def _xlsx_to_pdf(src: Path, out_path: Path) -> None:
         + "</body></html>"
     )
     _render_html_string_to_pdf(full_html, out_path)
+

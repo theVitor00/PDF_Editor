@@ -1,6 +1,7 @@
 """
 Aba de Conversão de PDF para diversos formatos (DOCX, HTML, Markdown, TXT, PNG, JPG).
 Segue o fluxo: Entrada -> Processamento -> Saída.
+Utiliza ícones Font Awesome e tema claro/clean.
 """
 
 from typing import Optional
@@ -24,6 +25,7 @@ from cortex_pdf.ui.components import (
     PipelineBanner,
     ResultStatusCard,
 )
+from cortex_pdf.ui.icons import fa_icon
 
 
 class ConvertFromPDFTab(QWidget):
@@ -106,7 +108,8 @@ class ConvertFromPDFTab(QWidget):
         layout.addWidget(self.output_card)
 
         # Ação
-        self.convert_btn = QPushButton("🔄 Converter PDF Agora")
+        self.convert_btn = QPushButton("Converter PDF Agora")
+        self.convert_btn.setIcon(fa_icon("exchange-alt", color="#ffffff"))
         self.convert_btn.setProperty("class", "PrimaryButton")
         self.convert_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self.convert_btn.clicked.connect(self.run_conversion)

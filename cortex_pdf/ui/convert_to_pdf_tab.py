@@ -2,6 +2,7 @@
 Aba de Conversão de Outros Formatos para PDF.
 Suporta DOCX, Imagens (PNG, JPG, BMP, WEBP, TIFF), HTML, Markdown, TXT, CSV e XLSX.
 Segue o fluxo: Entrada -> Processamento -> Saída.
+Utiliza ícones Font Awesome e tema claro/clean.
 """
 
 from typing import Optional
@@ -22,6 +23,7 @@ from cortex_pdf.ui.components import (
     PipelineBanner,
     ResultStatusCard,
 )
+from cortex_pdf.ui.icons import fa_icon
 
 
 class ConvertToPDFTab(QWidget):
@@ -95,7 +97,8 @@ class ConvertToPDFTab(QWidget):
         layout.addWidget(self.output_card)
 
         # Botão
-        self.convert_btn = QPushButton("📄 Gerar Arquivo PDF")
+        self.convert_btn = QPushButton("Gerar Arquivo PDF")
+        self.convert_btn.setIcon(fa_icon("file-pdf", color="#ffffff"))
         self.convert_btn.setProperty("class", "PrimaryButton")
         self.convert_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self.convert_btn.clicked.connect(self.run_conversion)
@@ -112,7 +115,7 @@ class ConvertToPDFTab(QWidget):
     def _on_file_selected(self, path_str: str) -> None:
         self.output_card.suggest_from_input(path_str)
         self.format_detected_lbl.setText(f"Arquivo pronto para conversão em PDF: {path_str}")
-        self.format_detected_lbl.setStyleSheet("color: #38bdf8; font-weight: 600;")
+        self.format_detected_lbl.setStyleSheet("color: #2563eb; font-weight: 600;")
 
     def run_conversion(self) -> None:
         src = self.input_card.selected_path

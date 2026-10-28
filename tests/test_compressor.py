@@ -46,3 +46,4 @@ def test_compress_pdf_keep_original_name(sample_pdf: Path):
     assert res.output_path != sample_pdf
     assert res.output_path.name == "documento_original_comprimido.pdf"
     assert file_sha256(sample_pdf) == orig_hash
+

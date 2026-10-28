@@ -1,11 +1,12 @@
 """
 Componentes reutilizáveis de interface gráfica para manter o fluxo padronizado:
 Entrada -> Processamento -> Saída (sempre gerando um novo arquivo sem tocar no original).
+Utiliza ícones Font Awesome via QtAwesome e tema claro/clean.
 """
 
 from pathlib import Path
-from typing import Callable, Optional
-from PyQt6.QtCore import Qt, pyqtSignal
+from typing import Optional
+from PyQt6.QtCore import QSize, Qt, pyqtSignal
 from PyQt6.QtWidgets import (
     QButtonGroup,
     QFileDialog,
@@ -19,26 +20,34 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from cortex_pdf.ui.icons import fa_icon, fa_pixmap_label
+
 
 class PipelineBanner(QFrame):
-    """Banner compacto exibindo o fluxo Entrada -> Processamento -> Saída."""
+    """Banner compacto exibindo o fluxo Entrada -> Processamento -> Saída com ícones Font Awesome."""
 
     def __init__(self, parent: Optional[QWidget] = None):
         super().__init__(parent)
         self.setObjectName("PipelineBanner")
         layout = QHBoxLayout(self)
         layout.setContentsMargins(14, 8, 14, 8)
+        layout.setSpacing(8)
 
+        icon_bolt = fa_pixmap_label("bolt", color="#2563eb", size=14)
         lbl_flow = QLabel(
-            "⚡ Fluxo Direto:   1. Entrada (Original Intacto)   ➔   "
-            "2. Processamento Local   ➔   3. Saída (Novo Arquivo Gerado)"
+            "Fluxo Direto:   1. Entrada (Original Intacto)   →   "
+            "2. Processamento Local   →   3. Saída (Novo Arquivo Gerado)"
         )
-        lbl_flow.setStyleSheet("color: #5eead4; font-weight: 600; font-size: 12px;")
-        lbl_privacy = QLabel("🔒 Zero coleta de dados")
-        lbl_privacy.setStyleSheet("color: #94a3b8; font-size: 11px;")
+        lbl_flow.setStyleSheet("color: #1e40af; font-weight: 600; font-size: 12px;")
 
+        icon_lock = fa_pixmap_label("shield-alt", color="#475569", size=14)
+        lbl_privacy = QLabel("Zero coleta de dados")
+        lbl_privacy.setStyleSheet("color: #475569; font-size: 11px; font-weight: 600;")
+
+        layout.addWidget(icon_bolt)
         layout.addWidget(lbl_flow)
         layout.addStretch()
+        layout.addWidget(icon_lock)
         layout.addWidget(lbl_privacy)
 
 
@@ -76,6 +85,7 @@ class FileInputCard(QFrame):
         self.path_edit.setReadOnly(True)
 
         self.browse_btn = QPushButton("Procurar Arquivo...")
+        self.browse_btn.setIcon(fa_icon("folder-open", color="#334155"))
         self.browse_btn.setProperty("class", "SecondaryButton")
         self.browse_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self.browse_btn.clicked.connect(self._on_browse)
@@ -144,7 +154,6 @@ class OutputNamingCard(QFrame):
         )
         lbl_sub.setProperty("class", "StepSubtitle")
 
-        # Opção de nome: Manter original vs Modificar nome
         self.radio_keep = QRadioButton(
             "Manter o nome original (adiciona sufixo automático se salvo na mesma pasta)"
         )
@@ -161,7 +170,6 @@ class OutputNamingCard(QFrame):
 
         self.radio_keep.toggled.connect(self._on_mode_changed)
 
-        # Pasta de destino
         dir_row = QHBoxLayout()
         lbl_dir = QLabel("Pasta de saída:")
         self.output_dir_edit = QLineEdit()
@@ -169,6 +177,7 @@ class OutputNamingCard(QFrame):
             "Mesma pasta do arquivo de entrada (padrão)"
         )
         self.browse_dir_btn = QPushButton("Escolher Pasta...")
+        self.browse_dir_btn.setIcon(fa_icon("folder", color="#334155"))
         self.browse_dir_btn.setProperty("class", "SecondaryButton")
         self.browse_dir_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self.browse_dir_btn.clicked.connect(self._on_browse_dir)
@@ -218,7 +227,7 @@ class OutputNamingCard(QFrame):
 
 
 class ResultStatusCard(QFrame):
-    """Exibe o resultado claro da operação (caminho gerado e botão rápido para visualizar)."""
+    """Exibe o resultado claro da operação com ícone Font Awesome e botão rápido para visualizar."""
 
     open_in_viewer_requested = pyqtSignal(str)
 
@@ -229,23 +238,30 @@ class ResultStatusCard(QFrame):
 
         layout = QHBoxLayout(self)
         layout.setContentsMargins(14, 10, 14, 10)
+        layout.setSpacing(10)
+
+        self.status_icon = QLabel()
+        self.status_icon.setPixmap(fa_icon("info-circle", color="#64748b").pixmap(QSize(18, 18)))
 
         self.status_label = QLabel("Aguardando processamento...")
         self.status_label.setWordWrap(True)
-        self.status_label.setStyleSheet("color: #94a3b8; font-size: 13px;")
+        self.status_label.setStyleSheet("color: #64748b; font-size: 13px;")
 
         self.open_viewer_btn = QPushButton("Abrir no Visualizador")
+        self.open_viewer_btn.setIcon(fa_icon("eye", color="#334155"))
         self.open_viewer_btn.setProperty("class", "SecondaryButton")
         self.open_viewer_btn.setVisible(False)
         self.open_viewer_btn.clicked.connect(self._emit_open_viewer)
 
+        layout.addWidget(self.status_icon)
         layout.addWidget(self.status_label, stretch=1)
         layout.addWidget(self.open_viewer_btn)
 
     def set_success(self, message: str, output_path: Optional[Path] = None) -> None:
-        out_info = f"\n📁 Arquivo salvo em: {output_path}" if output_path else ""
-        self.status_label.setText(f"✅ {message}{out_info}")
-        self.status_label.setStyleSheet("color: #34d399; font-weight: 600; font-size: 13px;")
+        out_info = f"\nArquivo salvo em: {output_path}" if output_path else ""
+        self.status_icon.setPixmap(fa_icon("check-circle", color="#15803d").pixmap(QSize(18, 18)))
+        self.status_label.setText(f"{message}{out_info}")
+        self.status_label.setStyleSheet("color: #15803d; font-weight: 600; font-size: 13px;")
         if output_path and output_path.suffix.lower() == ".pdf" and output_path.exists():
             self._last_pdf_path = str(output_path)
             self.open_viewer_btn.setVisible(True)
@@ -254,8 +270,9 @@ class ResultStatusCard(QFrame):
             self.open_viewer_btn.setVisible(False)
 
     def set_error(self, error_msg: str) -> None:
-        self.status_label.setText(f"❌ Erro: {error_msg}")
-        self.status_label.setStyleSheet("color: #f87171; font-weight: 600; font-size: 13px;")
+        self.status_icon.setPixmap(fa_icon("exclamation-circle", color="#dc2626").pixmap(QSize(18, 18)))
+        self.status_label.setText(f"Erro: {error_msg}")
+        self.status_label.setStyleSheet("color: #dc2626; font-weight: 600; font-size: 13px;")
         self.open_viewer_btn.setVisible(False)
 
     def _emit_open_viewer(self) -> None:

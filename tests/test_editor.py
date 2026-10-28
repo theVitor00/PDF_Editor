@@ -1,7 +1,8 @@
 """
 Testes para o motor de edição de texto em PDF (`editor_engine.py`).
 Verifica inspeção de editabilidade, extração de spans, substituição de texto,
-manutenção do arquivo original intacto e opções de nomeação.
+preservação de sombreamento de fundo (evitando quadrados brancos sobre textos brancos),
+preservação de negrito/itálico/fonte, manutenção do arquivo original intacto e opções de nomeação.
 """
 
 from pathlib import Path
@@ -70,6 +71,110 @@ def test_replace_text_in_pdf_creates_new_file_and_preserves_original(
         assert "Segunda Pagina Revisada" in doc2[1].get_text("text")
 
 
+def test_white_text_on_shaded_background_does_not_become_white_square(tmp_path: Path):
+    """
+    Garante que ao editar um texto com fonte branca sobre um fundo colorido/sombreado,
+    o fundo sombreado NÃO é apagado nem coberto por um retângulo branco, e o novo texto
+    continua branco e visível sobre o sombreamento original.
+    """
+    shaded_pdf = tmp_path / "cabecalho_sombreado.pdf"
+    bg_color = (0.1, 0.2, 0.5)  # Azul escuro sombreado (~ RGB 25, 51, 127)
+
+    with pymupdf.open() as doc:
+        page = doc.new_page(width=595, height=842)
+        # Desenha retângulo sombreado escuro
+        banner_rect = pymupdf.Rect(50, 50, 450, 110)
+        page.draw_rect(banner_rect, color=bg_color, fill=bg_color)
+        # Insere texto com fonte branca em negrito sobre o sombreamento
+        page.insert_text(
+            pymupdf.Point(70, 88),
+            "TITULO BRANCO SOMBREADO",
+            fontsize=16,
+            fontname="hebo",
+            color=(1.0, 1.0, 1.0),
+        )
+        doc.save(str(shaded_pdf))
+
+    # Verifica que extract_editable_spans detecta o sombreamento e a fonte branca em negrito
+    spans = extract_editable_spans(shaded_pdf, page_index=0)
+    assert len(spans) == 1
+    assert spans[0].has_shading is True
+    assert spans[0].color_rgb == (1.0, 1.0, 1.0)
+    assert spans[0].is_bold is True
+
+    # Substitui o texto branco
+    res = replace_text_in_pdf(
+        input_path=shaded_pdf,
+        search_text="TITULO BRANCO SOMBREADO",
+        new_text="NOVO TITULO BRANCO",
+        output_dir=tmp_path,
+        keep_original_name=False,
+        custom_name="cabecalho_editado",
+    )
+
+    assert res.output_path.exists()
+    with pymupdf.open(str(res.output_path)) as out_doc:
+        out_page = out_doc[0]
+        assert "NOVO TITULO BRANCO" in out_page.get_text("text")
+
+        # Verifica os spans do novo PDF: deve continuar branco (1.0, 1.0, 1.0) e negrito
+        new_spans = extract_editable_spans(res.output_path, page_index=0)
+        assert len(new_spans) == 1
+        assert new_spans[0].color_rgb == (1.0, 1.0, 1.0)
+        assert new_spans[0].is_bold is True
+        assert new_spans[0].has_shading is True
+
+        # Verifica no pixmap renderizado que o interior do banner sombreado NÃO virou um quadrado branco
+        pix = out_page.get_pixmap(alpha=False)
+        # Amostra pixel dentro da região onde ficava o texto antigo (mas fora de traço de letra)
+        sample_px = pix.pixel(68, 65)
+        assert sample_px != (255, 255, 255), "O fundo sombreado não pode virar um quadrado branco!"
+        assert sample_px[0] < 60 and sample_px[2] > 100
+
+
+def test_drop_shadow_layered_text_preserves_both_layers(tmp_path: Path):
+    """
+    Verifica que textos com sombreamento em camada dupla (uma camada escura de sombra
+    deslocada + uma camada frontal clara/branca) preservam ambas as cores e posições.
+    """
+    shadow_pdf = tmp_path / "texto_com_sombra.pdf"
+    with pymupdf.open() as doc:
+        page = doc.new_page(width=595, height=842)
+        page.draw_rect(pymupdf.Rect(40, 40, 400, 120), color=(0.3, 0.3, 0.35), fill=(0.3, 0.3, 0.35))
+        # Camada 1: Sombra preta deslocada em (+1.5, +1.5)
+        page.insert_text(
+            pymupdf.Point(61.5, 81.5),
+            "Texto Sombreado",
+            fontsize=18,
+            fontname="hebo",
+            color=(0.1, 0.1, 0.1),
+        )
+        # Camada 2: Frente branca em (60, 80)
+        page.insert_text(
+            pymupdf.Point(60.0, 80.0),
+            "Texto Sombreado",
+            fontsize=18,
+            fontname="hebo",
+            color=(1.0, 1.0, 1.0),
+        )
+        doc.save(str(shadow_pdf))
+
+    res = replace_text_in_pdf(
+        input_path=shadow_pdf,
+        search_text="Texto Sombreado",
+        new_text="Texto Atualizado",
+        output_dir=tmp_path,
+        keep_original_name=False,
+        custom_name="sombra_editada",
+    )
+
+    assert res.replacements_count == 2
+    edited_spans = extract_editable_spans(res.output_path, page_index=0)
+    colors = [s.color_rgb for s in edited_spans]
+    assert (1.0, 1.0, 1.0) in colors
+    assert any(c[0] < 0.2 and c[1] < 0.2 and c[2] < 0.2 for c in colors)
+
+
 def test_edit_pdf_by_batch_operations(sample_pdf: Path, tmp_path: Path):
     original_hash = file_sha256(sample_pdf)
 
@@ -95,7 +200,6 @@ def test_edit_pdf_by_batch_operations(sample_pdf: Path, tmp_path: Path):
 
 
 def test_non_editable_image_only_pdf_raises_clear_error(sample_image: Path, tmp_path: Path):
-    # Cria um PDF contendo apenas uma imagem (sem camada de texto)
     img_only_pdf = tmp_path / "digitalizado_sem_texto.pdf"
     with pymupdf.open() as doc:
         page = doc.new_page(width=400, height=300)

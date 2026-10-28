@@ -138,3 +138,4 @@ def _format_bytes(num_bytes: int) -> str:
     elif num_bytes < 1024 * 1024:
         return f"{num_bytes / 1024:.1f} KB"
     return f"{num_bytes / (1024 * 1024):.2f} MB"
+

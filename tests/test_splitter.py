@@ -76,3 +76,4 @@ def test_split_pdf_by_ranges_string(sample_pdf: Path, tmp_path: Path):
     assert len(res.output_paths) == 2
     assert res.parts_page_counts == [2, 1]
     assert file_sha256(sample_pdf) == orig_hash
+

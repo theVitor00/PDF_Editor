@@ -80,3 +80,4 @@ def test_viewer_text_extraction_selection_and_search(sample_pdf: Path):
     assert "Titulo Principal" in selected_text
 
     viewer.close()
+

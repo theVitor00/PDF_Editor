@@ -39,3 +39,4 @@ def test_merge_two_pdfs_creates_combined_file_and_keeps_originals(
 def test_merge_requires_at_least_two_files(sample_pdf: Path):
     with pytest.raises(ValueError, match="pelo menos dois"):
         merge_pdfs([sample_pdf])
+

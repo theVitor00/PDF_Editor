@@ -77,3 +77,4 @@ def merge_pdfs(
             f"({total_pages} página(s) no total)."
         ),
     )
+

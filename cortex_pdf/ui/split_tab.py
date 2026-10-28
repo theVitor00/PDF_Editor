@@ -4,6 +4,7 @@ Permite dividir um único arquivo PDF em dois ou mais arquivos PDF:
 - Dividir em 2 arquivos após uma página específica
 - Dividir por intervalos personalizados (ex: '1-2, 3-5')
 - Dividir a cada N páginas (ex: 1 página por arquivo)
+Utiliza ícones Font Awesome e tema claro/clean.
 """
 
 from typing import Optional
@@ -34,6 +35,7 @@ from cortex_pdf.ui.components import (
     PipelineBanner,
     ResultStatusCard,
 )
+from cortex_pdf.ui.icons import fa_icon
 
 
 class SplitTab(QWidget):
@@ -145,7 +147,8 @@ class SplitTab(QWidget):
         layout.addWidget(self.output_card)
 
         # Ação
-        self.split_btn = QPushButton("✂️ Dividir PDF Agora")
+        self.split_btn = QPushButton("Dividir PDF Agora")
+        self.split_btn.setIcon(fa_icon("cut", color="#ffffff"))
         self.split_btn.setProperty("class", "PrimaryButton")
         self.split_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self.split_btn.clicked.connect(self.run_split)
@@ -170,7 +173,7 @@ class SplitTab(QWidget):
             with pymupdf.open(path_str) as doc:
                 total = len(doc)
             self.page_info_lbl.setText(f"Documento carregado com {total} página(s).")
-            self.page_info_lbl.setStyleSheet("color: #34d399; font-weight: 600;")
+            self.page_info_lbl.setStyleSheet("color: #15803d; font-weight: 600;")
             if total >= 2:
                 self.split_page_spin.setMaximum(total - 1)
                 self.split_page_spin.setValue(max(1, total // 2))

@@ -103,3 +103,4 @@ def test_convert_pdf_to_images_png_and_jpg(sample_pdf: Path, tmp_path: Path):
     assert len(res_jpg.output_paths) == 3
     assert res_jpg.output_paths[0].name == "slide_parte_01.jpg"
     assert file_sha256(sample_pdf) == orig_hash
+

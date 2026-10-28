@@ -80,3 +80,4 @@ def test_resolve_multi_output_paths_creates_distinct_files(sample_pdf: Path, tmp
     assert len(paths_custom) == 2
     assert paths_custom[0].name == "capitulo_parte_01.pdf"
     assert paths_custom[1].name == "capitulo_parte_02.pdf"
+

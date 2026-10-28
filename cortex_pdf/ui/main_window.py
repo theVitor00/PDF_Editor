@@ -2,10 +2,11 @@
 Janela Principal do Cortex PDF Editor.
 Integra todas as 7 funcionalidades com barra lateral moderna e fluxo simples:
 Entrada -> Processamento -> Saída.
+Utiliza ícones Font Awesome (via QtAwesome) e tema clean e claro.
 """
 
 from typing import Optional
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import QSize, Qt
 from PyQt6.QtWidgets import (
     QFrame,
     QHBoxLayout,
@@ -23,6 +24,7 @@ from cortex_pdf.ui.compress_tab import CompressTab
 from cortex_pdf.ui.convert_from_pdf_tab import ConvertFromPDFTab
 from cortex_pdf.ui.convert_to_pdf_tab import ConvertToPDFTab
 from cortex_pdf.ui.editor_tab import EditorTab
+from cortex_pdf.ui.icons import fa_icon, fa_pixmap_label
 from cortex_pdf.ui.merge_tab import MergeTab
 from cortex_pdf.ui.split_tab import SplitTab
 from cortex_pdf.ui.styles import MODERN_STYLESHEET
@@ -30,15 +32,16 @@ from cortex_pdf.ui.viewer_tab import ViewerTab
 
 
 class CortexMainWindow(QMainWindow):
-    """Janela principal com navegação lateral para todas as ferramentas de PDF."""
+    """Janela principal com navegação lateral clean e ícones Font Awesome."""
 
     def __init__(self, parent: Optional[QWidget] = None):
         super().__init__(parent)
         self.setWindowTitle(f"{__app_name__} v{__version__}")
+        self.setWindowIcon(fa_icon("file-pdf", color="#2563eb"))
         self.resize(1180, 780)
         self.setStyleSheet(MODERN_STYLESHEET)
 
-        self._nav_buttons: list[QPushButton] = []
+        self._nav_buttons: list[tuple[QPushButton, str]] = []
         self._build_ui()
 
     def _build_ui(self) -> None:
@@ -53,17 +56,22 @@ class CortexMainWindow(QMainWindow):
         # Barra Lateral
         sidebar = QFrame()
         sidebar.setObjectName("SidebarFrame")
-        sidebar.setFixedWidth(250)
+        sidebar.setFixedWidth(256)
         sb_layout = QVBoxLayout(sidebar)
         sb_layout.setContentsMargins(16, 20, 16, 20)
         sb_layout.setSpacing(6)
 
-        brand_title = QLabel("⚡ Cortex PDF")
+        brand_row = QHBoxLayout()
+        brand_icon = fa_pixmap_label("file-pdf", color="#2563eb", size=22)
+        brand_title = QLabel("Cortex PDF")
         brand_title.setObjectName("BrandTitle")
+        brand_row.addWidget(brand_icon)
+        brand_row.addWidget(brand_title, stretch=1)
+
         brand_sub = QLabel("Entrada → Processamento → Saída\n100% Local • Originais Intactos")
         brand_sub.setObjectName("BrandSubtitle")
 
-        sb_layout.addWidget(brand_title)
+        sb_layout.addLayout(brand_row)
         sb_layout.addWidget(brand_sub)
 
         # Abas / Telas
@@ -77,7 +85,6 @@ class CortexMainWindow(QMainWindow):
         self.merge_tab = MergeTab()
         self.split_tab = SplitTab()
 
-        # Conecta sinal "Abrir no Visualizador" das abas geradoras de PDF
         for tab in (
             self.editor_tab,
             self.convert_to_pdf_tab,
@@ -88,29 +95,35 @@ class CortexMainWindow(QMainWindow):
             tab.open_in_viewer.connect(self.open_pdf_in_viewer)
 
         pages = [
-            ("📖  Visualizar PDF", self.viewer_tab),
-            ("✏️  Editar Texto do PDF", self.editor_tab),
-            ("🔄  Converter PDF p/ Outros", self.convert_from_pdf_tab),
-            ("📄  Converter p/ PDF", self.convert_to_pdf_tab),
-            ("🗜️  Comprimir PDF", self.compress_tab),
-            ("🔗  Juntar PDFs", self.merge_tab),
-            ("✂️  Dividir PDF", self.split_tab),
+            ("book-open", "Visualizar PDF", self.viewer_tab),
+            ("edit", "Editar Texto do PDF", self.editor_tab),
+            ("exchange-alt", "Converter PDF p/ Outros", self.convert_from_pdf_tab),
+            ("file-export", "Converter p/ PDF", self.convert_to_pdf_tab),
+            ("compress-arrows-alt", "Comprimir PDF", self.compress_tab),
+            ("object-group", "Juntar PDFs", self.merge_tab),
+            ("cut", "Dividir PDF", self.split_tab),
         ]
 
-        for idx, (label, widget) in enumerate(pages):
+        for idx, (icon_name, label, widget) in enumerate(pages):
             self.stack.addWidget(widget)
-            btn = QPushButton(label)
+            btn = QPushButton(f"  {label}")
+            btn.setIcon(fa_icon(icon_name, color="#475569"))
+            btn.setIconSize(QSize(16, 16))
             btn.setProperty("class", "NavButton")
             btn.setCursor(Qt.CursorShape.PointingHandCursor)
             btn.clicked.connect(lambda checked=False, i=idx: self.switch_tab(i))
             sb_layout.addWidget(btn)
-            self._nav_buttons.append(btn)
+            self._nav_buttons.append((btn, icon_name))
 
         sb_layout.addStretch()
 
-        footer_lbl = QLabel("🔒 Privacidade Total:\nNenhum dado é coletado.\nArquivos originais preservados.")
-        footer_lbl.setStyleSheet("color: #64748b; font-size: 11px; padding-top: 12px;")
-        sb_layout.addWidget(footer_lbl)
+        footer_row = QHBoxLayout()
+        footer_icon = fa_pixmap_label("shield-alt", color="#64748b", size=14)
+        footer_lbl = QLabel("Privacidade Total:\nNenhum dado é coletado.\nArquivos originais preservados.")
+        footer_lbl.setStyleSheet("color: #64748b; font-size: 11px;")
+        footer_row.addWidget(footer_icon)
+        footer_row.addWidget(footer_lbl, stretch=1)
+        sb_layout.addLayout(footer_row)
 
         root_layout.addWidget(sidebar)
         root_layout.addWidget(self.stack, stretch=1)
@@ -126,8 +139,10 @@ class CortexMainWindow(QMainWindow):
     def switch_tab(self, index: int) -> None:
         if 0 <= index < self.stack.count():
             self.stack.setCurrentIndex(index)
-            for i, btn in enumerate(self._nav_buttons):
-                btn.setProperty("active", "true" if i == index else "false")
+            for i, (btn, icon_name) in enumerate(self._nav_buttons):
+                is_active = i == index
+                btn.setProperty("active", "true" if is_active else "false")
+                btn.setIcon(fa_icon(icon_name, color="#1d4ed8" if is_active else "#475569"))
                 btn.style().unpolish(btn)
                 btn.style().polish(btn)
 

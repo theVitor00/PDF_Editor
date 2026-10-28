@@ -2,6 +2,7 @@
 Aba de Compressão de PDF.
 Segue o fluxo: Entrada -> Processamento -> Saída.
 Reduz o tamanho total do PDF sem modificar o arquivo original.
+Utiliza ícones Font Awesome e tema claro/clean.
 """
 
 from typing import Optional
@@ -24,6 +25,7 @@ from cortex_pdf.ui.components import (
     PipelineBanner,
     ResultStatusCard,
 )
+from cortex_pdf.ui.icons import fa_icon
 
 
 class CompressTab(QWidget):
@@ -98,7 +100,8 @@ class CompressTab(QWidget):
         layout.addWidget(self.output_card)
 
         # Ação
-        self.compress_btn = QPushButton("🗜️ Comprimir PDF e Gerar Novo Arquivo")
+        self.compress_btn = QPushButton("Comprimir PDF e Gerar Novo Arquivo")
+        self.compress_btn.setIcon(fa_icon("compress-arrows-alt", color="#ffffff"))
         self.compress_btn.setProperty("class", "PrimaryButton")
         self.compress_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self.compress_btn.clicked.connect(self.run_compression)

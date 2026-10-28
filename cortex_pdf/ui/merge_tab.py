@@ -2,9 +2,9 @@
 Aba de Junção (Merge) de Arquivos PDF.
 Permite selecionar dois ou mais arquivos PDF, ordenar a sequência desejada
 e gerar um único novo arquivo PDF sem modificar os originais.
+Utiliza ícones Font Awesome e tema claro/clean.
 """
 
-from pathlib import Path
 from typing import Optional
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import (
@@ -25,6 +25,7 @@ from cortex_pdf.ui.components import (
     PipelineBanner,
     ResultStatusCard,
 )
+from cortex_pdf.ui.icons import fa_icon
 
 
 class MergeTab(QWidget):
@@ -76,23 +77,28 @@ class MergeTab(QWidget):
         self.files_list.setMinimumHeight(140)
 
         btns_row = QHBoxLayout()
-        self.add_btn = QPushButton("➕ Adicionar PDF(s)...")
+        self.add_btn = QPushButton("Adicionar PDF(s)...")
+        self.add_btn.setIcon(fa_icon("plus", color="#334155"))
         self.add_btn.setProperty("class", "SecondaryButton")
         self.add_btn.clicked.connect(self._on_add_files)
 
-        self.up_btn = QPushButton("⬆ Subir")
+        self.up_btn = QPushButton("Subir")
+        self.up_btn.setIcon(fa_icon("arrow-up", color="#334155"))
         self.up_btn.setProperty("class", "SecondaryButton")
         self.up_btn.clicked.connect(self.move_up)
 
-        self.down_btn = QPushButton("⬇ Descer")
+        self.down_btn = QPushButton("Descer")
+        self.down_btn.setIcon(fa_icon("arrow-down", color="#334155"))
         self.down_btn.setProperty("class", "SecondaryButton")
         self.down_btn.clicked.connect(self.move_down)
 
-        self.remove_btn = QPushButton("🗑 Remover Selecionado")
+        self.remove_btn = QPushButton("Remover Selecionado")
+        self.remove_btn.setIcon(fa_icon("trash-alt", color="#334155"))
         self.remove_btn.setProperty("class", "SecondaryButton")
         self.remove_btn.clicked.connect(self.remove_selected)
 
         self.clear_btn = QPushButton("Limpar Lista")
+        self.clear_btn.setIcon(fa_icon("eraser", color="#334155"))
         self.clear_btn.setProperty("class", "SecondaryButton")
         self.clear_btn.clicked.connect(self.files_list.clear)
 
@@ -114,7 +120,8 @@ class MergeTab(QWidget):
         layout.addWidget(self.output_card)
 
         # Botão de Ação
-        self.merge_btn = QPushButton("🔗 Juntar PDFs em um Único Arquivo")
+        self.merge_btn = QPushButton("Juntar PDFs em um Único Arquivo")
+        self.merge_btn.setIcon(fa_icon("object-group", color="#ffffff"))
         self.merge_btn.setProperty("class", "PrimaryButton")
         self.merge_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self.merge_btn.clicked.connect(self.run_merge)

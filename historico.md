@@ -110,3 +110,32 @@ Este documento funciona como um diário técnico detalhado de todas as solicita�
     - `test_splitter.py`: testa divisão em dois arquivos por página de corte, divisão por intervalos e divisão por página.
     - `test_ui.py`: testa a interface gráfica `CortexMainWindow` e o fluxo completo `Entrada → Processamento → Saída` em todas as 7 abas.
   - Inicialização do repositório Git (`git init`) e realização do commit com todos os arquivos do projeto.
+
+---
+
+### Registro 06 — Fidelidade de Sombreamento/Formatação na Edição de Texto, Ícones Font Awesome e Tema Claro Clean
+- **Data:** 28/10/2026
+- **Hora:** 09:02 - 09:13 (BRT / UTC-03:00)
+- **O que foi pedido:**
+  1. Corrigir problemas de fidelidade na formatação do texto modificado no PDF, especificamente nos casos onde o texto possui sombreamento de fundo ou sombra em camada: em testes realizados pelo usuário, textos com fonte branca ficavam aparecendo como um quadrado branco ao invés de se ajustarem à formatação/sombreamento original do documento.
+  2. Substituir todos os emojis da interface gráfica por ícones de uma biblioteca Font Awesome (`QtAwesome` / `fa5s.*`).
+  3. Modificar o padrão de cores da interface para um visual mais clean e claro (*Light & Clean Theme*).
+- **O que foi feito:**
+  1. **Correção Definitiva de Sombreamento e Fonte Branca (`cortex_pdf/core/editor_engine.py`):**
+     - **Causa raiz identificada:** Anteriormente, `page.add_redact_annot(rect, fill=(1, 1, 1))` pintava um retângulo sólido branco `(1, 1, 1)` sobre a região do texto antigo e `page.apply_redactions(images=PDF_REDACT_IMAGE_NONE)` (sem `graphics=PDF_REDACT_LINE_ART_NONE`) removia ou cobria o sombreamento vetorial de fundo. Quando a fonte do texto era branca `(1, 1, 1)`, o texto branco era desenhado sobre o retângulo branco recém-criado, resultando em um quadrado branco sólido.
+     - **Solução implementada:**
+       - Alterado para `page.add_redact_annot(rect, fill=False)` combinado com `page.apply_redactions(images=pymupdf.PDF_REDACT_IMAGE_NONE, graphics=pymupdf.PDF_REDACT_LINE_ART_NONE)`. Assim, apenas os glifos de texto antigos são removidos do fluxo do PDF, mantendo 100% intactos os retângulos sombreados, fundos coloridos, bordas de tabelas e imagens de fundo.
+       - Implementada a função `_sample_background_rgb(page, rect)` que amostra os pixels de fundo ao redor do trecho para detectar automaticamente se o span possui sombreamento (`has_shading=True`) e qual a cor `background_rgb`.
+       - Implementado o pareamento inteligente de spans (`_find_best_matching_span` com controle de spans já consumidos `used_span_ids`), garantindo que textos com sombreamento em dupla camada (*drop-shadow*: uma camada de sombra escura deslocada + uma camada frontal clara/branca) preservem ambas as camadas na ordem e cores exatas.
+       - Implementada a detecção de atributos tipográficos (`_detect_font_traits` e `_select_base14_font`) analisando as flags do PDF (`flags & 16` para negrito, `flags & 2` para itálico, `flags & 4` para serifada, `flags & 8` para monoespaçada) e o nome da fonte original, selecionando automaticamente a variante correspondente (`helv`/`hebo`/`heit`/`hebi`, `tiro`/`tibo`/`tiit`/`tibi`, `cour`/`cobo`/`coit`/`cobi`).
+  2. **Substituição de Emojis por Ícones Font Awesome (`cortex_pdf/ui/icons.py` e todas as abas):**
+     - Criado o módulo `cortex_pdf/ui/icons.py` integrando a biblioteca `QtAwesome` (`fa5s.*` — Font Awesome 5 Solid).
+     - Todos os emojis nos botões, cabeçalhos, banners, alertas de status e itens da barra lateral foram substituídos por ícones vetoriais Font Awesome (`fa5s.file-pdf`, `fa5s.book-open`, `fa5s.edit`, `fa5s.exchange-alt`, `fa5s.file-export`, `fa5s.compress-arrows-alt`, `fa5s.object-group`, `fa5s.cut`, `fa5s.search-plus`, `fa5s.search-minus`, `fa5s.copy`, `fa5s.check-circle`, `fa5s.bolt`, `fa5s.shield-alt`, etc.).
+  3. **Novo Padrão de Cores Clean e Claro (`cortex_pdf/ui/styles.py`):**
+     - A folha de estilos `MODERN_STYLESHEET` foi reestruturada para uma paleta clara e clean: fundo principal em `#f8fafc`, cartões e barra lateral em branco puro `#ffffff` com bordas suaves `#e2e8f0`, tipografia de alto contraste em `#0f172a` / `#475569` e destaque primário em azul royal `#2563eb` (hover `#1d4ed8` e fundo ativo suave `#eff6ff`).
+  4. **Novos Testes Automatizados (`tests/test_editor.py` e `tests/test_ui.py`):**
+     - Adicionado `test_white_text_on_shaded_background_does_not_become_white_square` comprovando no pixmap renderizado que o texto branco editado sobre fundo sombreado preserva o fundo escuro original e não gera quadrado branco.
+     - Adicionado `test_drop_shadow_layered_text_preserves_both_layers` comprovando a preservação de camadas de sombra e texto frontal.
+     - Atualizado `test_ui.py` para validar o carregamento dos ícones Font Awesome e o tema claro.
+
+

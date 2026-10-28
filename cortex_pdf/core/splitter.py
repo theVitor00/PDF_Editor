@@ -199,3 +199,4 @@ def split_pdf_by_ranges(
         parts_page_counts=counts,
         message=f"PDF dividido com sucesso em {len(out_paths)} novos arquivos.",
     )
+

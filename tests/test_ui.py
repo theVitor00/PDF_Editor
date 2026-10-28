@@ -1,7 +1,7 @@
 """
 Testes automatizados da Interface Gráfica (PyQt6) em modo offscreen.
-Verifica que a janela principal e todas as 7 abas executam o fluxo:
-Entrada -> Processamento -> Saída corretamente.
+Verifica que a janela principal utiliza o tema claro/clean, ícones Font Awesome (QtAwesome)
+sem emojis e executa todas as 7 abas seguindo Entrada -> Processamento -> Saída.
 """
 
 from pathlib import Path
@@ -29,9 +29,16 @@ def test_main_window_and_all_tabs_workflow(
     window = CortexMainWindow()
     assert window.stack.count() == 7
 
+    # Verifica que o tema é claro (#f8fafc / #ffffff) e que os botões de navegação possuem ícones Font Awesome
+    assert "#f8fafc" in window.styleSheet()
+    assert "#ffffff" in window.styleSheet()
+    for btn, _ in window._nav_buttons:
+        assert not btn.icon().isNull()
+
     # 1. Aba Visualizar PDF
     window.switch_tab(0)
     viewer = window.viewer_tab
+    assert not viewer.open_btn.icon().isNull()
     viewer.load_pdf(sample_pdf)
     assert viewer.engine.is_open
     assert viewer.engine.page_count == 3
@@ -48,6 +55,7 @@ def test_main_window_and_all_tabs_workflow(
     # 2. Aba Editar Texto do PDF
     window.switch_tab(1)
     editor = window.editor_tab
+    assert not editor.run_btn.icon().isNull()
     editor.input_card.set_file_path(str(sample_pdf))
     editor.search_text_edit.setText("Valor Antigo: 1000")
     editor.replace_text_edit.setText("Valor Novo: 9999")
@@ -61,7 +69,6 @@ def test_main_window_and_all_tabs_workflow(
     window.switch_tab(2)
     conv_from = window.convert_from_pdf_tab
     conv_from.input_card.set_file_path(str(sample_pdf))
-    # Seleciona TXT (índice 3)
     conv_from.format_combo.setCurrentIndex(3)
     conv_from.output_card.output_dir_edit.setText(str(tmp_path / "ui_from_pdf"))
     conv_from.run_conversion()

@@ -1,5 +1,6 @@
 """
 Aba de Visualização de Documentos PDF.
+Utiliza ícones Font Awesome (via QtAwesome) e tema clean/claro.
 Suporta:
 - Abrir PDF
 - Zoom-In, Zoom-Out, Reset (100%)
@@ -13,7 +14,7 @@ Suporta:
 from pathlib import Path
 from typing import Optional
 from PyQt6.QtCore import QPoint, QRect, QSize, Qt, pyqtSignal
-from PyQt6.QtGui import QGuiApplication, QImage, QPainter, QColor, QPen, QPixmap
+from PyQt6.QtGui import QColor, QGuiApplication, QImage, QPainter, QPen, QPixmap
 from PyQt6.QtWidgets import (
     QFileDialog,
     QFrame,
@@ -32,6 +33,7 @@ from PyQt6.QtWidgets import (
 )
 
 from cortex_pdf.core.viewer_engine import PDFViewerEngine
+from cortex_pdf.ui.icons import fa_icon, fa_pixmap_label
 
 
 class InteractivePageLabel(QLabel):
@@ -103,7 +105,8 @@ class ViewerTab(QWidget):
         title_box.addWidget(lbl_title)
         title_box.addWidget(lbl_desc)
 
-        self.open_btn = QPushButton("📂 Abrir PDF...")
+        self.open_btn = QPushButton("Abrir PDF...")
+        self.open_btn.setIcon(fa_icon("folder-open", color="#ffffff"))
         self.open_btn.setProperty("class", "PrimaryButton")
         self.open_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self.open_btn.clicked.connect(self._on_open_dialog)
@@ -119,7 +122,8 @@ class ViewerTab(QWidget):
         tb_layout.setContentsMargins(12, 8, 12, 8)
         tb_layout.setSpacing(8)
 
-        self.prev_page_btn = QPushButton("◀ Anterior")
+        self.prev_page_btn = QPushButton("Anterior")
+        self.prev_page_btn.setIcon(fa_icon("chevron-left", color="#334155"))
         self.prev_page_btn.setProperty("class", "SecondaryButton")
         self.prev_page_btn.clicked.connect(self.prev_page)
 
@@ -130,28 +134,33 @@ class ViewerTab(QWidget):
 
         self.total_pages_lbl = QLabel("de 0")
 
-        self.next_page_btn = QPushButton("Próxima ▶")
+        self.next_page_btn = QPushButton("Próxima")
+        self.next_page_btn.setIcon(fa_icon("chevron-right", color="#334155"))
         self.next_page_btn.setProperty("class", "SecondaryButton")
         self.next_page_btn.clicked.connect(self.next_page)
 
-        self.zoom_out_btn = QPushButton("🔍 - Zoom Out")
+        self.zoom_out_btn = QPushButton("Zoom Out")
+        self.zoom_out_btn.setIcon(fa_icon("search-minus", color="#334155"))
         self.zoom_out_btn.setProperty("class", "SecondaryButton")
         self.zoom_out_btn.clicked.connect(self.zoom_out)
 
         self.zoom_lbl = QLabel("100%")
         self.zoom_lbl.setMinimumWidth(52)
         self.zoom_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.zoom_lbl.setStyleSheet("font-weight: 700; color: #38bdf8;")
+        self.zoom_lbl.setStyleSheet("font-weight: 700; color: #2563eb;")
 
-        self.zoom_in_btn = QPushButton("🔍 + Zoom In")
+        self.zoom_in_btn = QPushButton("Zoom In")
+        self.zoom_in_btn.setIcon(fa_icon("search-plus", color="#334155"))
         self.zoom_in_btn.setProperty("class", "SecondaryButton")
         self.zoom_in_btn.clicked.connect(self.zoom_in)
 
         self.zoom_reset_btn = QPushButton("100%")
+        self.zoom_reset_btn.setIcon(fa_icon("expand", color="#334155"))
         self.zoom_reset_btn.setProperty("class", "SecondaryButton")
         self.zoom_reset_btn.clicked.connect(self.reset_zoom)
 
-        self.rotate_btn = QPushButton("↻ Girar 90°")
+        self.rotate_btn = QPushButton("Girar 90°")
+        self.rotate_btn.setIcon(fa_icon("redo", color="#334155"))
         self.rotate_btn.setProperty("class", "SecondaryButton")
         self.rotate_btn.clicked.connect(self.rotate_page)
 
@@ -160,6 +169,7 @@ class ViewerTab(QWidget):
         self.search_input.setPlaceholderText("Buscar texto na página...")
         self.search_input.returnPressed.connect(self.search_in_page)
         self.search_btn = QPushButton("Buscar")
+        self.search_btn.setIcon(fa_icon("search", color="#334155"))
         self.search_btn.setProperty("class", "SecondaryButton")
         self.search_btn.clicked.connect(self.search_in_page)
 
@@ -183,21 +193,25 @@ class ViewerTab(QWidget):
         # Área central dividida: Canvas da Página (Esquerda) + Painel de Seleção e Cópia de Texto (Direita)
         splitter = QSplitter(Qt.Orientation.Horizontal)
 
-        # Esquerda: ScrollArea com a página renderizada
         canvas_frame = QFrame()
         canvas_frame.setProperty("class", "StepCard")
         canvas_layout = QVBoxLayout(canvas_frame)
         canvas_layout.setContentsMargins(8, 8, 8, 8)
 
+        hint_row = QHBoxLayout()
+        hint_icon = fa_pixmap_label("lightbulb", color="#2563eb", size=14)
         hint_lbl = QLabel(
-            "💡 Dica: Arraste o mouse sobre qualquer área da página abaixo para selecionar e extrair o texto daquela região."
+            "Dica: Arraste o mouse sobre qualquer área da página abaixo para selecionar e extrair o texto daquela região."
         )
-        hint_lbl.setStyleSheet("color: #94a3b8; font-size: 11px;")
-        canvas_layout.addWidget(hint_lbl)
+        hint_lbl.setStyleSheet("color: #64748b; font-size: 11px;")
+        hint_row.addWidget(hint_icon)
+        hint_row.addWidget(hint_lbl, stretch=1)
+        canvas_layout.addLayout(hint_row)
 
         self.scroll_area = QScrollArea()
         self.scroll_area.setWidgetResizable(True)
         self.scroll_area.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.scroll_area.setStyleSheet("background-color: #f1f5f9; border-radius: 6px;")
 
         self.page_canvas = InteractivePageLabel()
         self.page_canvas.setText("Nenhum documento PDF aberto.\nClique em 'Abrir PDF...' para começar.")
@@ -227,11 +241,13 @@ class ViewerTab(QWidget):
         self.text_view.setPlaceholderText("O texto da página ou da seleção aparecerá aqui...")
 
         copy_btns_row = QHBoxLayout()
-        self.copy_selected_btn = QPushButton("📋 Copiar Seleção")
+        self.copy_selected_btn = QPushButton("Copiar Seleção")
+        self.copy_selected_btn.setIcon(fa_icon("copy", color="#ffffff"))
         self.copy_selected_btn.setProperty("class", "PrimaryButton")
         self.copy_selected_btn.clicked.connect(self.copy_selected_text)
 
-        self.copy_all_btn = QPushButton("📄 Copiar Página Inteira")
+        self.copy_all_btn = QPushButton("Copiar Página Inteira")
+        self.copy_all_btn.setIcon(fa_icon("file-alt", color="#334155"))
         self.copy_all_btn.setProperty("class", "SecondaryButton")
         self.copy_all_btn.clicked.connect(self.copy_all_page_text)
 
@@ -239,7 +255,7 @@ class ViewerTab(QWidget):
         copy_btns_row.addWidget(self.copy_all_btn)
 
         self.copy_status_lbl = QLabel("")
-        self.copy_status_lbl.setStyleSheet("color: #34d399; font-size: 12px; font-weight: 600;")
+        self.copy_status_lbl.setStyleSheet("color: #15803d; font-size: 12px; font-weight: 600;")
 
         tp_layout.addWidget(tp_title)
         tp_layout.addWidget(tp_sub)
@@ -288,12 +304,11 @@ class ViewerTab(QWidget):
         qimg = QImage.fromData(rendered.png_bytes, "PNG")
         pixmap = QPixmap.fromImage(qimg)
 
-        # Desenha destaques de busca, se houver
         if self._highlight_rects:
             painter = QPainter(pixmap)
-            pen = QPen(QColor(245, 158, 11, 220), 2)
+            pen = QPen(QColor(217, 119, 6, 220), 2)
             painter.setPen(pen)
-            painter.setBrush(QColor(253, 224, 71, 85))
+            painter.setBrush(QColor(253, 224, 71, 95))
             z = rendered.zoom
             for x0, y0, x1, y1 in self._highlight_rects:
                 painter.drawRect(int(x0 * z), int(y0 * z), int((x1 - x0) * z), int((y1 - y0) * z))
@@ -318,7 +333,7 @@ class ViewerTab(QWidget):
         if extracted:
             self.text_view.setPlainText(extracted)
             self.text_view.selectAll()
-            self.copy_status_lbl.setText("Trecho selecionado da página! Clique em 'Copiar Seleção'.")
+            self.copy_status_lbl.setText("Trecho selecionado da página. Clique em 'Copiar Seleção'.")
         else:
             self.copy_status_lbl.setText("Nenhum texto encontrado na área selecionada.")
 
@@ -393,7 +408,7 @@ class ViewerTab(QWidget):
             clipboard = QGuiApplication.clipboard()
             if clipboard is not None:
                 clipboard.setText(selected)
-            self.copy_status_lbl.setText("✅ Texto copiado para a área de transferência!")
+            self.copy_status_lbl.setText("Texto copiado para a área de transferência.")
         else:
             self.copy_status_lbl.setText("Nenhum texto para copiar.")
 
@@ -406,7 +421,7 @@ class ViewerTab(QWidget):
             if clipboard is not None:
                 clipboard.setText(full_text)
             self.text_view.setPlainText(full_text)
-            self.copy_status_lbl.setText("✅ Todo o texto da página foi copiado!")
+            self.copy_status_lbl.setText("Todo o texto da página foi copiado.")
         else:
             self.copy_status_lbl.setText("Esta página não possui texto selecionável.")
 

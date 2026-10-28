@@ -107,3 +107,4 @@ def resolve_multi_output_paths(
         paths.append(candidate)
 
     return paths
+

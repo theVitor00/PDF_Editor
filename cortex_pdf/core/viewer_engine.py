@@ -211,3 +211,4 @@ class PDFViewerEngine:
             raise IndexError(
                 f"Índice de página inválido: {page_index}. Total de páginas: {len(self._doc)}"
             )
+

@@ -160,3 +160,4 @@ def sample_xlsx(tmp_path: Path) -> Path:
     wb.save(str(path))
     wb.close()
     return path
+
