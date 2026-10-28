@@ -138,4 +138,16 @@ Este documento funciona como um diário técnico detalhado de todas as solicita�
      - Adicionado `test_drop_shadow_layered_text_preserves_both_layers` comprovando a preservação de camadas de sombra e texto frontal.
      - Atualizado `test_ui.py` para validar o carregamento dos ícones Font Awesome e o tema claro.
 
+---
+
+### Registro 07 — Configuração de Repositório Remoto GitHub e Push
+- **Data:** 28/10/2026
+- **Hora:** 11:06 (BRT / UTC-03:00)
+- **O que foi pedido:** Adicionar o repositório remoto `https://github.com/theVitor00/PDF_Editor.git` e realizar o push de todo o projeto para ele.
+- **O que foi feito:**
+  - Atualização deste arquivo `historico.md` com o registro da operação.
+  - Adição do remote `origin` apontando para `https://github.com/theVitor00/PDF_Editor.git`.
+  - Envio (`git push -u origin`) do histórico completo de commits para o repositório remoto no GitHub.
+
+
 
